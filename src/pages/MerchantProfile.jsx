@@ -222,19 +222,21 @@ const MerchantProfile = () => {
         .request(config)
         .then((response) => {
           console.log(JSON.stringify(response.data));
-          if (response.data.length != 0) {
+          if (response.data.data != null && response.data.data.length != 0) {
             // if user exists
             console.log("inside if user exists");
 
             localStorage.setItem("user", JSON.stringify(response.data.data));
             setOpenPhno(false);
             setOpenOtp(false);
-            setOpenProfile(true);
+            setOpenProfile(false);
+            setLogin(false);
             navigate(`/profile/merchant/${id}`);
           } else {
-            setLogin(false);
+            // setLogin(true);
             setOpenPhno(false);
             setOpenOtp(false);
+            setOpenProfile(true);
           }
         })
         .catch((error) => {
@@ -276,25 +278,53 @@ const MerchantProfile = () => {
         type === "checkbox" ? checked : type === "file" ? files[0] : value,
     }));
   };
-  const handleImagePreview = (e) => {
-    const file = e.target.files[0];
 
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setProfileData((prevProfileData) => ({
-          ...prevProfileData,
-          profileImage: reader.result,
-        }));
-      };
-      reader.readAsDataURL(file);
-    }
+  const handleImageChange = async (pics) => {
+    console.log(pics);
+    const formData = new FormData();
+    formData.append("file", pics);
+
+    let config = {
+      method: "post",
+      maxBodyLength: Infinity,
+      url: "http://localhost:4000/api/fileUpload",
+      // headers: {
+      //   ...data.getHeaders(),
+      // },
+      data: formData,
+    };
+
+    axios
+      .request(config)
+      .then((response) => {
+        console.log(JSON.stringify(response.data));
+        console.log(response.data.data.url);
+        profileData.profileImage = response.data.data.url;
+      })
+      .catch((error) => {
+        console.log(error);
+      });
   };
+
+  // const handleImagePreview = (e) => {
+  //   const file = e.target.files[0];
+
+  //   if (file) {
+  //     const reader = new FileReader();
+  //     reader.onloadend = () => {
+  //       setProfileData((prevProfileData) => ({
+  //         ...prevProfileData,
+  //         profileImage: reader.result,
+  //       }));
+  //     };
+  //     reader.readAsDataURL(file);
+  //   }
+  // };
 
   const handleSubmitProfile = async (e) => {
     e.preventDefault();
     console.log("Profile data :", profileData);
-
+    profileData.contact = phoneNumber;
     const data = JSON.stringify(profileData);
     let config = {
       method: "post",
@@ -310,7 +340,7 @@ const MerchantProfile = () => {
       .request(config)
       .then((response) => {
         console.log(JSON.stringify(response.data));
-        localStorage.setItem("user", JSON.stringify(response.data.data));
+        localStorage.setItem("user", JSON.stringify(response.data.user));
         setLogin(false);
         setOpenProfile(false);
         navigate(`/profile/merchant/${id}`);
@@ -478,11 +508,12 @@ const MerchantProfile = () => {
                     id="profileImage"
                     name="profileImage"
                     accept="image/*"
-                    required
                     className="absolute inset-0 opacity-0"
                     onChange={(e) => {
-                      handleChangeProfile(e);
-                      handleImagePreview(e);
+                      // handleChangeProfile(e);
+                      // handleImagePreview(e);
+                        if (e.target.files)
+                          handleImageChange(e.target.files[0]);
                     }}
                   />
                 </label>
